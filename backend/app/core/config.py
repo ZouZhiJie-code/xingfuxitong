@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     database_url: str = Field(default="sqlite:///./local.db", alias="DATABASE_URL")
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     cors_origins: str = Field(default="*", alias="CORS_ORIGINS")
+    minimax_api_key: str = Field(default="", alias="MINIMAX_API_KEY")
+    minimax_base_url: str = Field(default="https://api.minimax.io/v1/text/chatcompletion_v2", alias="MINIMAX_BASE_URL")
+    minimax_model: str = Field(default="MiniMax-M2.7", alias="MINIMAX_MODEL")
 
 
 @lru_cache

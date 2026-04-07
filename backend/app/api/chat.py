@@ -11,6 +11,7 @@ from app.services.chat_session import (
     get_or_create_session,
 )
 from app.services.element_flow import ELEMENTS
+from app.services.minimax_client import generate_reply
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -19,16 +20,20 @@ def _is_objective_fact(message: str) -> bool:
     return len(message.strip()) >= 8
 
 
-def _build_assistant_reply(current_element: str, user_message: str, should_advance: bool) -> str:
-    if not should_advance:
+def _build_system_prompt(current_element: str, should_advance: bool) -> str:
+    if should_advance:
         return (
-            f"我收到你在“{current_element}”维度的输入：{user_message}。"
-            "请补充一个更具体的客观行为（例如做了什么、持续多久、结果如何）。"
+            "你是幸福设计系统的教练型 AI。"
+            f"用户当前刚完成“{current_element}”维度复盘。"
+            "请先肯定用户一句，再提示继续下一个维度。"
+            "回复保持简洁，2-3 句中文。"
         )
 
     return (
-        f"已记录“{current_element}”维度行为事实：{user_message}。"
-        "很好，我们继续下一个维度。"
+        "你是幸福设计系统的教练型 AI。"
+        f"用户正在“{current_element}”维度复盘，但输入不够客观。"
+        "请用1-2句追问，要求给出可验证事实（动作、时长、结果）。"
+        "语气坚定但不攻击。"
     )
 
 
@@ -47,11 +52,8 @@ def stream_chat(payload: ChatRequest) -> StreamingResponse:
     append_user_message(state=state, message=payload.message)
 
     should_advance = _is_objective_fact(payload.message)
-    assistant_reply = _build_assistant_reply(
-        current_element=current_element,
-        user_message=payload.message,
-        should_advance=should_advance,
-    )
+    system_prompt = _build_system_prompt(current_element=current_element, should_advance=should_advance)
+    assistant_reply = generate_reply(system_prompt=system_prompt, user_message=payload.message)
 
     append_assistant_message(state=state, message=assistant_reply)
     if should_advance:
