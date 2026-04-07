@@ -12,3 +12,12 @@ class ChatRequest(BaseModel):
     user_id: str = Field(min_length=1)
     session_id: str = Field(min_length=1)
     message: str = Field(min_length=1)
+
+
+class SessionStateResponse(BaseModel):
+    user_id: str
+    session_id: str
+    current_element: str
+    completed_elements: list[str]
+    pending_elements: list[str]
+    total_messages: int
