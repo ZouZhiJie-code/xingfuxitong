@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     minimax_api_key: str = Field(default="", alias="MINIMAX_API_KEY")
     minimax_base_url: str = Field(default="https://api.minimax.io/v1/text/chatcompletion_v2", alias="MINIMAX_BASE_URL")
     minimax_model: str = Field(default="MiniMax-M2.7", alias="MINIMAX_MODEL")
+    llm_provider: str = Field(default="openai", alias="LLM_PROVIDER")
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    openai_base_url: str = Field(default="https://api.openai.com/v1/chat/completions", alias="OPENAI_BASE_URL")
+    openai_model: str = Field(default="gpt-5.4", alias="OPENAI_MODEL")
 
 
 @lru_cache

@@ -9,15 +9,18 @@ from app.services.chat_session import (
     append_assistant_message,
     append_user_message,
     get_or_create_session,
+    get_recent_history,
 )
 from app.services.element_flow import ELEMENTS
-from app.services.minimax_client import generate_reply
+from app.services.llm_client import generate_reply
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 def _is_objective_fact(message: str) -> bool:
-    return len(message.strip()) >= 8
+    text = message.strip()
+    has_action = any(k in text for k in ["做", "完成", "学习", "工作", "跑", "写", "读", "练", "沟通", "运动"])
+    return len(text) >= 8 and has_action
 
 
 def _build_system_prompt(current_element: str, should_advance: bool) -> str:
@@ -25,15 +28,15 @@ def _build_system_prompt(current_element: str, should_advance: bool) -> str:
         return (
             "你是幸福设计系统的教练型 AI。"
             f"用户当前刚完成“{current_element}”维度复盘。"
-            "请先肯定用户一句，再提示继续下一个维度。"
-            "回复保持简洁，2-3 句中文。"
+            "请理解用户语义后给出1句具体反馈，并引导进入下一个维度。"
+            "语言自然，不要模板化。"
         )
 
     return (
         "你是幸福设计系统的教练型 AI。"
-        f"用户正在“{current_element}”维度复盘，但输入不够客观。"
-        "请用1-2句追问，要求给出可验证事实（动作、时长、结果）。"
-        "语气坚定但不攻击。"
+        f"用户正在“{current_element}”维度复盘。"
+        "如果输入不够客观，请追问动作、时长、结果；"
+        "若用户在问模型或系统能力，请先简短回答，再拉回复盘任务。"
     )
 
 
@@ -53,7 +56,11 @@ def stream_chat(payload: ChatRequest) -> StreamingResponse:
 
     should_advance = _is_objective_fact(payload.message)
     system_prompt = _build_system_prompt(current_element=current_element, should_advance=should_advance)
-    assistant_reply = generate_reply(system_prompt=system_prompt, user_message=payload.message)
+    assistant_reply = generate_reply(
+        system_prompt=system_prompt,
+        user_message=payload.message,
+        history=get_recent_history(state),
+    )
 
     append_assistant_message(state=state, message=assistant_reply)
     if should_advance:

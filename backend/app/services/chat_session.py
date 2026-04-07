@@ -43,3 +43,7 @@ def append_assistant_message(state: SessionState, message: str) -> None:
 def advance_element(state: SessionState) -> None:
     if state.current_element_index < len(ELEMENTS) - 1:
         state.current_element_index += 1
+
+
+def get_recent_history(state: SessionState, limit: int = 6) -> list[dict[str, str]]:
+    return state.messages[-limit:]
