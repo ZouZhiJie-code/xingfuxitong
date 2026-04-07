@@ -26,6 +26,16 @@ def _extract_text(payload: dict[str, Any]) -> str:
     return ""
 
 
+def _extract_error(payload: dict[str, Any]) -> str:
+    base_resp = payload.get("base_resp")
+    if isinstance(base_resp, dict):
+        status_msg = base_resp.get("status_msg")
+        status_code = base_resp.get("status_code")
+        if isinstance(status_msg, str):
+            return f"MiniMax 返回错误：{status_msg}（code={status_code}）"
+    return ""
+
+
 def generate_reply(system_prompt: str, user_message: str) -> str:
     settings = get_settings()
     if not settings.minimax_api_key:
@@ -49,7 +59,14 @@ def generate_reply(system_prompt: str, user_message: str) -> str:
             timeout=45.0,
         )
         response.raise_for_status()
-        content = _extract_text(response.json())
+        payload = response.json()
+        error_message = _extract_error(payload)
+        if error_message:
+            return error_message
+
+        content = _extract_text(payload)
         return content.strip() or "模型返回为空，请稍后重试。"
+    except httpx.HTTPStatusError as exc:
+        return f"MiniMax 调用失败（HTTP {exc.response.status_code}），请检查配置。"
     except Exception:
         return "调用 MiniMax 模型失败，请稍后重试。"
