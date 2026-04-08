@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+import os
 
 import httpx
 
@@ -38,7 +39,8 @@ def _extract_error(payload: dict[str, Any]) -> str:
 
 def generate_reply(system_prompt: str, user_message: str) -> str:
     settings = get_settings()
-    if not settings.minimax_api_key:
+    minimax_key = os.getenv("MINIMAX_API_KEY_V2") or settings.minimax_api_key
+    if not minimax_key:
         return "当前未配置 MiniMax API Key，请联系管理员在后端环境变量中配置。"
 
     body = {
@@ -49,7 +51,7 @@ def generate_reply(system_prompt: str, user_message: str) -> str:
         ],
         "temperature": 0.2,
     }
-    headers = {"Authorization": f"Bearer {settings.minimax_api_key}", "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {minimax_key}", "Content-Type": "application/json"}
 
     try:
         response = httpx.post(
