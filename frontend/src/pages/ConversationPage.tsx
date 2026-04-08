@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { apiClient } from '../services/api'
 
@@ -32,6 +33,10 @@ export function ConversationPage() {
   const [sessionState, setSessionState] = useState<SessionState | null>(null)
 
   const completedCount = useMemo(() => sessionState?.completed_elements.length ?? 0, [sessionState])
+  const needByok = useMemo(
+    () => messages.some((m) => m.role === 'assistant' && m.content.includes('请先在设置页配置你的 MiniMax API Key')),
+    [messages],
+  )
 
   async function loadSessionState() {
     const { data } = await apiClient.get<SessionState>(`/chat/session/${defaultUserId}/${defaultSessionId}`)
@@ -109,6 +114,16 @@ export function ConversationPage() {
       <h2>沉浸式复盘页</h2>
       <p>已完成维度：{completedCount} / 8</p>
       <p>当前维度：{sessionState?.current_element ?? '加载中...'}</p>
+
+      <div style={{ marginBottom: 10 }}>
+        <Link to="/keys">👉 去 BYOK 设置页配置 API Key</Link>
+      </div>
+
+      {needByok && (
+        <div style={{ background: '#fff8e1', border: '1px solid #ffecb3', borderRadius: 8, padding: 10, marginBottom: 12 }}>
+          你还没有配置 API Key。请先去 <Link to="/keys">BYOK设置</Link> 页面保存并验证 MiniMax Key。
+        </div>
+      )}
 
       <div style={{ border: '1px solid #ddd', borderRadius: 12, minHeight: 320, padding: 12, marginBottom: 12 }}>
         {messages.map((message) => (
