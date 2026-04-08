@@ -37,9 +37,9 @@ def _extract_error(payload: dict[str, Any]) -> str:
     return ""
 
 
-def generate_reply(system_prompt: str, user_message: str) -> str:
+def generate_reply(system_prompt: str, user_message: str, api_key_override: str | None = None) -> str:
     settings = get_settings()
-    minimax_key = os.getenv("MINIMAX_API_KEY_V2") or settings.minimax_api_key
+    minimax_key = api_key_override or os.getenv("MINIMAX_API_KEY_V2") or settings.minimax_api_key
     if not minimax_key:
         return "当前未配置 MiniMax API Key，请联系管理员在后端环境变量中配置。"
 

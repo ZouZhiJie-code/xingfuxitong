@@ -12,6 +12,7 @@ from app.services.chat_session import (
     get_recent_history,
 )
 from app.services.element_flow import ELEMENTS
+from app.services.key_store import get_minimax_key
 from app.services.llm_client import generate_reply
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -56,11 +57,16 @@ def stream_chat(payload: ChatRequest) -> StreamingResponse:
 
     should_advance = _is_objective_fact(payload.message)
     system_prompt = _build_system_prompt(current_element=current_element, should_advance=should_advance)
-    assistant_reply = generate_reply(
-        system_prompt=system_prompt,
-        user_message=payload.message,
-        history=get_recent_history(state),
-    )
+    user_minimax_key = get_minimax_key(user_id=payload.user_id)
+    if not user_minimax_key:
+        assistant_reply = "请先在设置页配置你的 MiniMax API Key（BYOK）。"
+    else:
+        assistant_reply = generate_reply(
+            system_prompt=system_prompt,
+            user_message=payload.message,
+            history=get_recent_history(state),
+            api_key_override=user_minimax_key,
+        )
 
     append_assistant_message(state=state, message=assistant_reply)
     if should_advance:
